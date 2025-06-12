@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, Filter, TrendingUp, Clock, Users, Sparkles, X, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Search, Filter, TrendingUp, Clock, Sparkles, X } from 'lucide-react';
 
 interface SearchSuggestion {
   text: string;
@@ -75,7 +75,7 @@ const SmartSearch: React.FC<SmartSearchProps> = ({ onSearch, initialQuery = '', 
   };
 
   // Generate contextual suggestions based on input
-  const generateSuggestions = (input: string): SearchSuggestion[] => {
+  const generateSuggestions = useCallback((input: string): SearchSuggestion[] => {
     if (!input.trim()) {
       // Show trending searches when empty
       return [
@@ -107,7 +107,7 @@ const SmartSearch: React.FC<SmartSearchProps> = ({ onSearch, initialQuery = '', 
         return bScore - aScore;
       })
       .slice(0, 6);
-  };
+  }, []);
 
   // Handle input change with debounced suggestions
   useEffect(() => {
@@ -118,7 +118,7 @@ const SmartSearch: React.FC<SmartSearchProps> = ({ onSearch, initialQuery = '', 
     }, 200);
 
     return () => clearTimeout(timer);
-  }, [query, showSuggestions]);
+  }, [query, showSuggestions, generateSuggestions]);
 
   // Handle search execution
   const handleSearch = (searchQuery?: string) => {
@@ -142,7 +142,7 @@ const SmartSearch: React.FC<SmartSearchProps> = ({ onSearch, initialQuery = '', 
   };
 
   // Handle filter changes
-  const updateFilter = (key: keyof SearchFilter, value: any) => {
+  const updateFilter = (key: keyof SearchFilter, value: string[] | [number, number] | boolean) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
@@ -310,7 +310,7 @@ const SmartSearch: React.FC<SmartSearchProps> = ({ onSearch, initialQuery = '', 
             ) : query ? (
               <div className="p-8 text-center">
                 <Search className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                <p className="text-gray-500 dark:text-gray-400">No suggestions found for "{query}"</p>
+                <p className="text-gray-500 dark:text-gray-400">No suggestions found for &ldquo;{query}&rdquo;</p>
                 <button
                   onClick={() => handleSearch()}
                   className="mt-2 text-blue-600 dark:text-blue-400 hover:underline text-sm"
