@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Search, TrendingUp, Users, MapPin, Award, Briefcase, Calendar, AlertCircle, Loader, BarChart3, PieChart, Globe, Brain, Zap, Target, Network, Star } from 'lucide-react';
 
 // Types
