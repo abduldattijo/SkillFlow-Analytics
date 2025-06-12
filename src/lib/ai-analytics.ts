@@ -196,7 +196,6 @@ export class AISkillIntelligence {
     factors: string[];
   } {
     const current = this.marketTrends[skill as keyof typeof this.marketTrends]?.demand || 70;
-    const growth = this.marketTrends[skill as keyof typeof this.marketTrends]?.growth || 10;
 
     const multipliers = { short: 1.1, medium: 1.3, long: 1.8 };
     const predicted = Math.min(100, current * multipliers[timeframe]);

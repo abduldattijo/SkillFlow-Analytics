@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Search, TrendingUp, Users, MapPin, Award, Briefcase, Calendar, AlertCircle, Loader, BarChart3, PieChart, Globe, Brain, Zap, Target, Network, Star } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Search, TrendingUp, Users, MapPin, Award, AlertCircle, Loader, BarChart3, Globe, Brain, Zap, Target, Network, Star } from 'lucide-react';
 
 // Types
 type TabType = 'overview' | 'skills' | 'locations' | 'ai-insights' | 'network';
@@ -12,6 +12,52 @@ interface SearchFilter {
   skills: string[];
   salaryRange: [number, number];
   remote: boolean;
+}
+
+interface SkillNode {
+  id: string;
+  name: string;
+  demand: number;
+  trend: 'rising' | 'stable' | 'declining';
+  size: number;
+  connections: string[];
+  salary: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+}
+
+interface SkillConnection {
+  source: string;
+  target: string;
+  strength: number;
+}
+
+interface SkillCorrelation {
+  skill: string;
+  correlation: number;
+  confidence: number;
+  marketDemand: 'high' | 'medium' | 'low';
+  trend: 'rising' | 'stable' | 'declining';
+}
+
+interface CareerPath {
+  title: string;
+  probability: number;
+  timeframe: string;
+  requiredSkills: string[];
+  salaryRange: { min: number; max: number };
+}
+
+interface MarketInsight {
+  skill: string;
+  demand: number;
+  supply: number;
+  competition: 'low' | 'medium' | 'high';
+  opportunities: number;
+  averageSalary: number;
+  growthRate: number;
 }
 
 // Mock Smart Search Component (simplified for demo)
@@ -59,7 +105,7 @@ const SmartSearch: React.FC<{ onSearch: (query: string, filters?: SearchFilter) 
 
 // Mock AI Intelligence (simplified)
 class AISkillIntelligence {
-  static analyzeSkillCorrelations(skill: string) {
+  static analyzeSkillCorrelations(skill: string): SkillCorrelation[] {
     const correlations = {
       'react': [
         { skill: 'JavaScript', correlation: 0.95, confidence: 0.98, marketDemand: 'high' as const, trend: 'rising' as const },
@@ -82,7 +128,7 @@ class AISkillIntelligence {
     return correlations[key] || correlations.react;
   }
 
-  static generateCareerPaths(skills: string[]) {
+  static generateCareerPaths(): CareerPath[] {
     return [
       {
         title: 'Senior Software Engineer',
@@ -101,7 +147,7 @@ class AISkillIntelligence {
     ];
   }
 
-  static generateMarketInsights(skills: string[]) {
+  static generateMarketInsights(skills: string[]): MarketInsight[] {
     return skills.map(skill => ({
       skill,
       demand: Math.floor(Math.random() * 40) + 60,
@@ -117,13 +163,13 @@ class AISkillIntelligence {
 // Interactive Skill Network Visualization (Full Version)
 const SkillNetworkVisualization: React.FC<{ searchTerm: string }> = ({ searchTerm }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [selectedSkill, setSelectedSkill] = useState<any>(null);
+  const [selectedSkill, setSelectedSkill] = useState<SkillNode | null>(null);
   const [isAnimating, setIsAnimating] = useState(true);
-  const [nodes, setNodes] = useState<any[]>([]);
-  const [connections, setConnections] = useState<any[]>([]);
+  const [nodes, setNodes] = useState<SkillNode[]>([]);
+  const [connections, setConnections] = useState<SkillConnection[]>([]);
 
   // Generate realistic skill network data
-  const generateSkillNetwork = (centerSkill: string) => {
+  const generateSkillNetwork = useCallback((centerSkill: string) => {
     const skillData = {
       'react': {
         core: { name: 'React', demand: 92, trend: 'rising' as const, salary: 115000 },
@@ -168,7 +214,7 @@ const SkillNetworkVisualization: React.FC<{ searchTerm: string }> = ({ searchTer
 
     // Create nodes
     const allSkills = [data.core, ...data.connected];
-    const newNodes: any[] = allSkills.map((skill, index) => ({
+    const newNodes: SkillNode[] = allSkills.map((skill, index) => ({
       id: skill.name,
       name: skill.name,
       demand: skill.demand,
@@ -183,18 +229,18 @@ const SkillNetworkVisualization: React.FC<{ searchTerm: string }> = ({ searchTer
     }));
 
     // Create connections
-    const newConnections: any[] = data.connected.map(skill => ({
+    const newConnections: SkillConnection[] = data.connected.map(skill => ({
       source: data.core.name,
       target: skill.name,
-      strength: (skill as any).strength || 0.5
+      strength: skill.strength || 0.5
     }));
 
     setNodes(newNodes);
     setConnections(newConnections);
-  };
+  }, []);
 
   // Physics simulation
-  const updatePhysics = () => {
+  const updatePhysics = useCallback(() => {
     if (!isAnimating) return;
 
     setNodes(prevNodes => {
@@ -257,10 +303,10 @@ const SkillNetworkVisualization: React.FC<{ searchTerm: string }> = ({ searchTer
 
       return newNodes;
     });
-  };
+  }, [connections, isAnimating]);
 
   // Canvas drawing
-  const draw = () => {
+  const draw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -298,7 +344,7 @@ const SkillNetworkVisualization: React.FC<{ searchTerm: string }> = ({ searchTer
         declining: '#ef4444'
       };
 
-      ctx.fillStyle = colors[node.trend as keyof typeof colors];
+      ctx.fillStyle = colors[node.trend];
       ctx.fill();
 
       // Border
@@ -321,7 +367,7 @@ const SkillNetworkVisualization: React.FC<{ searchTerm: string }> = ({ searchTer
       ctx.textBaseline = 'middle';
       ctx.fillText(node.name, node.x, node.y);
     });
-  };
+  }, [nodes, connections, selectedSkill]);
 
   // Handle canvas click
   const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -343,7 +389,7 @@ const SkillNetworkVisualization: React.FC<{ searchTerm: string }> = ({ searchTer
   // Initialize network when search term changes
   useEffect(() => {
     generateSkillNetwork(searchTerm);
-  }, [searchTerm]);
+  }, [searchTerm, generateSkillNetwork]);
 
   // Animation loop
   useEffect(() => {
@@ -355,12 +401,12 @@ const SkillNetworkVisualization: React.FC<{ searchTerm: string }> = ({ searchTer
     }, 50);
 
     return () => clearInterval(interval);
-  }, [nodes, connections, isAnimating, selectedSkill]);
+  }, [draw, updatePhysics, isAnimating]);
 
   // Initial draw
   useEffect(() => {
     draw();
-  }, [nodes, connections, selectedSkill]);
+  }, [draw]);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
@@ -529,7 +575,7 @@ const SkillNetworkVisualization: React.FC<{ searchTerm: string }> = ({ searchTer
 
 // Main Dashboard Component
 const SkillFlowDashboard: React.FC = () => {
-  const [searchResults, setSearchResults] = useState<any>(null);
+  const [searchResults, setSearchResults] = useState<Record<string, unknown> | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -611,7 +657,7 @@ const SkillFlowDashboard: React.FC = () => {
         </div>
 
         {/* Demo Data Notice */}
-        {searchResults && (searchResults as any).isDemo && (
+        {searchResults && (searchResults as Record<string, unknown>).isDemo && (
           <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-start space-x-3">
             <div className="flex-shrink-0">
               <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
@@ -623,10 +669,10 @@ const SkillFlowDashboard: React.FC = () => {
                 ✨ Demo Mode - Realistic Torre-like Data
               </h4>
               <p className="text-sm text-blue-700 dark:text-blue-300">
-                {(searchResults as any).demoMessage || 'This demonstrates SkillFlow Analytics with realistic demo data that mimics Torre\'s API structure and responses.'}
+                {(searchResults as Record<string, unknown>).demoMessage as string || 'This demonstrates SkillFlow Analytics with realistic demo data that mimics Torre\'s API structure and responses.'}
               </p>
               <div className="mt-2 text-xs text-blue-600 dark:text-blue-400">
-                <strong>Try these searches:</strong> "python", "javascript", "react", "data scientist", "devops"
+                <strong>Try these searches:</strong> &ldquo;python&rdquo;, &ldquo;javascript&rdquo;, &ldquo;react&rdquo;, &ldquo;data scientist&rdquo;, &ldquo;devops&rdquo;
               </div>
             </div>
           </div>
@@ -669,16 +715,16 @@ const SkillFlowDashboard: React.FC = () => {
               <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">🎯 Try These Demo Searches:</h4>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div className="bg-white dark:bg-gray-800 rounded px-3 py-2 text-blue-700 dark:text-blue-300 font-medium">
-                  "python"
+                  &ldquo;python&rdquo;
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded px-3 py-2 text-purple-700 dark:text-purple-300 font-medium">
-                  "javascript"
+                  &ldquo;javascript&rdquo;
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded px-3 py-2 text-green-700 dark:text-green-300 font-medium">
-                  "react"
+                  &ldquo;react&rdquo;
                 </div>
                 <div className="bg-white dark:bg-gray-800 rounded px-3 py-2 text-orange-700 dark:text-orange-300 font-medium">
-                  "data scientist"
+                  &ldquo;data scientist&rdquo;
                 </div>
               </div>
             </div>
@@ -697,7 +743,7 @@ const SkillFlowDashboard: React.FC = () => {
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Profiles</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{searchResults.totalProfiles.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{((searchResults as Record<string, unknown>).totalProfiles as number || 0).toLocaleString()}</p>
                   </div>
                 </div>
               </div>
@@ -709,7 +755,7 @@ const SkillFlowDashboard: React.FC = () => {
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Top Skills Found</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{searchResults.skillAnalytics?.length || 0}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{((searchResults as Record<string, unknown>).skillAnalytics as unknown[] || []).length}</p>
                   </div>
                 </div>
               </div>
@@ -721,7 +767,7 @@ const SkillFlowDashboard: React.FC = () => {
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Locations</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{searchResults.locationDistribution?.length || 0}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{((searchResults as Record<string, unknown>).locationDistribution as unknown[] || []).length}</p>
                   </div>
                 </div>
               </div>
@@ -779,16 +825,16 @@ const SkillFlowDashboard: React.FC = () => {
                 <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Profile Overview</h3>
                   <div className="space-y-4">
-                    {searchResults.profiles?.slice(0, 5).map((profile: any, index: number) => (
+                    {((searchResults as Record<string, unknown>).profiles as Record<string, unknown>[] || []).slice(0, 5).map((profile: Record<string, unknown>, index: number) => (
                       <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                         <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                          {profile.name.charAt(0)}
+                          {(profile.name as string || '').charAt(0)}
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-medium text-gray-900 dark:text-white">{profile.name}</h4>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">{profile.headline}</p>
+                          <h4 className="font-medium text-gray-900 dark:text-white">{profile.name as string}</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{profile.headline as string}</p>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {profile.topSkills?.slice(0, 3).map((skill: string, i: number) => (
+                            {(profile.topSkills as string[] || []).slice(0, 3).map((skill: string, i: number) => (
                               <span key={i} className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-xs">
                                 {skill}
                               </span>
@@ -804,20 +850,20 @@ const SkillFlowDashboard: React.FC = () => {
                 <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Top Skills</h3>
                   <div className="space-y-3">
-                    {searchResults.skillAnalytics?.slice(0, 8).map((skill: any, index: number) => (
+                    {((searchResults as Record<string, unknown>).skillAnalytics as Record<string, unknown>[] || []).slice(0, 8).map((skill: Record<string, unknown>, index: number) => (
                       <div key={index} className="flex items-center justify-between">
                         <span className="font-medium text-gray-900 dark:text-white">
-                          {skill.name || `Skill ${index + 1}`}
+                          {skill.name as string || `Skill ${index + 1}`}
                         </span>
                         <div className="flex items-center space-x-2">
                           <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                             <div
                               className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
-                              style={{ width: `${Math.min(100, (skill.frequency / (searchResults.skillAnalytics[0]?.frequency || 1)) * 100)}%` }}
+                              style={{ width: `${Math.min(100, ((skill.frequency as number || 0) / (((searchResults as Record<string, unknown>).skillAnalytics as Record<string, unknown>[] || [])[0]?.frequency as number || 1)) * 100)}%` }}
                             ></div>
                           </div>
                           <span className="text-sm text-gray-500 dark:text-gray-400">
-                            {skill.frequency || 0}
+                            {skill.frequency as number || 0}
                           </span>
                         </div>
                       </div>
@@ -834,27 +880,27 @@ const SkillFlowDashboard: React.FC = () => {
             {activeTab === 'skills' && (
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Skills Analysis</h3>
-                {searchResults.skillAnalytics && searchResults.skillAnalytics.length > 0 ? (
+                {((searchResults as Record<string, unknown>).skillAnalytics as Record<string, unknown>[] || []).length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {searchResults.skillAnalytics.map((skill: any, index: number) => (
+                    {((searchResults as Record<string, unknown>).skillAnalytics as Record<string, unknown>[] || []).map((skill: Record<string, unknown>, index: number) => (
                       <div key={index} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-medium text-gray-900 dark:text-white">
-                            {skill.name || `Skill ${index + 1}`}
+                            {skill.name as string || `Skill ${index + 1}`}
                           </h4>
                           <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                            {skill.frequency || 0}
+                            {skill.frequency as number || 0}
                           </span>
                         </div>
                         <div className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden mb-2">
                           <div
                             className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
-                            style={{ width: `${Math.min(100, (skill.frequency / (searchResults.skillAnalytics[0]?.frequency || 1)) * 100)}%` }}
+                            style={{ width: `${Math.min(100, ((skill.frequency as number || 0) / (((searchResults as Record<string, unknown>).skillAnalytics as Record<string, unknown>[] || [])[0]?.frequency as number || 1)) * 100)}%` }}
                           ></div>
                         </div>
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-gray-500 dark:text-gray-400">
-                            {skill.percentage || '0'}% of profiles
+                            {skill.percentage as string || '0'}% of profiles
                           </span>
                           {skill.trend && (
                             <span className={`px-2 py-1 rounded-full ${
@@ -862,7 +908,7 @@ const SkillFlowDashboard: React.FC = () => {
                               skill.trend === 'declining' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
                               'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
                             }`}>
-                              {skill.trend}
+                              {skill.trend as string}
                             </span>
                           )}
                         </div>
@@ -881,23 +927,23 @@ const SkillFlowDashboard: React.FC = () => {
             {activeTab === 'locations' && (
               <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Geographic Distribution</h3>
-                {searchResults.locationDistribution && searchResults.locationDistribution.length > 0 ? (
+                {((searchResults as Record<string, unknown>).locationDistribution as Record<string, unknown>[] || []).length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {searchResults.locationDistribution.map((location: any, index: number) => (
+                    {((searchResults as Record<string, unknown>).locationDistribution as Record<string, unknown>[] || []).map((location: Record<string, unknown>, index: number) => (
                       <div key={index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                         <div className="flex items-center space-x-3">
                           <MapPin className="w-5 h-5 text-gray-500" />
                           <span className="font-medium text-gray-900 dark:text-white">
-                            {location.location || `Location ${index + 1}`}
+                            {location.location as string || `Location ${index + 1}`}
                           </span>
                         </div>
                         <div className="text-right">
                           <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            {location.count || 0}
+                            {location.count as number || 0}
                           </span>
                           {location.percentage && (
                             <div className="text-xs text-gray-500 dark:text-gray-400">
-                              {location.percentage}%
+                              {location.percentage as string}%
                             </div>
                           )}
                         </div>
@@ -924,7 +970,7 @@ const SkillFlowDashboard: React.FC = () => {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Skill Correlation Analysis</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">AI-powered insights for "{currentQuery}"</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">AI-powered insights for &ldquo;{currentQuery}&rdquo;</p>
                     </div>
                   </div>
 
@@ -973,7 +1019,7 @@ const SkillFlowDashboard: React.FC = () => {
                         <span>Recommended Career Paths</span>
                       </h4>
                       <div className="space-y-4">
-                        {AISkillIntelligence.generateCareerPaths([currentQuery]).slice(0, 3).map((path, index) => (
+                        {AISkillIntelligence.generateCareerPaths().slice(0, 3).map((path, index) => (
                           <div key={index} className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                             <div className="flex items-center justify-between mb-2">
                               <h5 className="font-medium text-gray-900 dark:text-white">{path.title}</h5>

@@ -58,8 +58,22 @@ interface TorreGenome {
   }>;
 }
 
+interface SkillAnalytics {
+  name: string;
+  frequency: number;
+  percentage: string;
+  trend: 'rising' | 'stable' | 'declining';
+  demand: 'high' | 'medium' | 'low';
+}
+
+interface LocationAnalytics {
+  location: string;
+  count: number;
+  percentage: string;
+}
+
 export class SkillAnalyzer {
-  static analyzeSkills(genomes: TorreGenome[]): any[] {
+  static analyzeSkills(genomes: TorreGenome[]): SkillAnalytics[] {
     const skillCounts = new Map<string, number>();
     const totalProfiles = genomes.length;
 
@@ -85,7 +99,7 @@ export class SkillAnalyzer {
     return skills;
   }
 
-  static getLocationDistribution(genomes: TorreGenome[]): any[] {
+  static getLocationDistribution(genomes: TorreGenome[]): LocationAnalytics[] {
     const locationCounts = new Map<string, number>();
 
     genomes.forEach(genome => {
@@ -134,7 +148,7 @@ class TorreAPI {
   private baseURL = 'https://torre.ai/api';
 
   // Realistic demo data based on real Torre profiles
-  private demoProfiles = {
+  private demoProfiles: Record<string, TorreSearchResult[]> = {
     'python': [
       {
         name: 'Sofia Rodriguez',
@@ -223,9 +237,9 @@ class TorreAPI {
     ]
   };
 
-  private createDetailedProfile(profile: any): TorreGenome {
-    const skills = this.generateRealisticSkills(profile.professionalTitle);
-    const experiences = this.generateRealisticExperiences(profile.professionalTitle);
+  private createDetailedProfile(profile: TorreSearchResult): TorreGenome {
+    const skills = this.generateRealisticSkills(profile.professionalTitle || '');
+    const experiences = this.generateRealisticExperiences(profile.professionalTitle || '');
 
     return {
       person: {
@@ -233,8 +247,8 @@ class TorreAPI {
         username: profile.username,
         picture: profile.picture,
         location: {
-          name: profile.location,
-          country: profile.location.split(', ').pop() || 'Unknown'
+          name: profile.location || 'Unknown',
+          country: profile.location?.split(', ').pop() || 'Unknown'
         },
         professionalHeadline: profile.professionalTitle,
         summary: profile.summary
@@ -247,8 +261,15 @@ class TorreAPI {
     };
   }
 
-  private generateRealisticSkills(title: string): any[] {
-    const skillSets = {
+  private generateRealisticSkills(title: string): Array<{
+    name: string;
+    proficiency: 'novice' | 'intermediate' | 'advanced' | 'expert';
+    highlightIndex: number;
+  }> {
+    const skillSets: Record<string, Array<{
+      name: string;
+      proficiency: 'novice' | 'intermediate' | 'advanced' | 'expert';
+    }>> = {
       'Python': [
         { name: 'Python', proficiency: 'expert' },
         { name: 'Django', proficiency: 'advanced' },
@@ -329,7 +350,17 @@ class TorreAPI {
     }));
   }
 
-  private generateRealisticExperiences(title: string): any[] {
+  private generateRealisticExperiences(title: string): Array<{
+    category: string;
+    name: string;
+    organizations: Array<{
+      name: string;
+      picture?: string;
+    }>;
+    fromYear?: string;
+    toYear?: string;
+    responsibilities?: string[];
+  }> {
     const companies = [
       'Google', 'Microsoft', 'Amazon', 'Meta', 'Apple', 'Netflix', 'Spotify', 'Airbnb', 'Uber', 'Tesla',
       'Shopify', 'Stripe', 'Datadog', 'Twilio', 'Slack', 'GitHub', 'GitLab', 'Docker', 'MongoDB', 'Redis'
@@ -363,7 +394,15 @@ class TorreAPI {
     return experiences;
   }
 
-  private generateEducation(): any[] {
+  private generateEducation(): Array<{
+    category: string;
+    name: string;
+    organizations: Array<{
+      name: string;
+    }>;
+    fromYear?: string;
+    toYear?: string;
+  }> {
     const universities = [
       'Stanford University', 'MIT', 'University of California Berkeley', 'Carnegie Mellon University',
       'Georgia Institute of Technology', 'University of Washington', 'Cornell University'
@@ -380,7 +419,10 @@ class TorreAPI {
     }];
   }
 
-  private generateLanguages(): any[] {
+  private generateLanguages(): Array<{
+    language: string;
+    fluency: string;
+  }> {
     const languages = [
       { language: 'English', fluency: 'Fluent' },
       { language: 'Spanish', fluency: 'Native' },
@@ -390,7 +432,9 @@ class TorreAPI {
     return languages.slice(0, Math.floor(Math.random() * 3) + 1);
   }
 
-  private generateInterests(): any[] {
+  private generateInterests(): Array<{
+    name: string;
+  }> {
     const interests = [
       'Machine Learning', 'Open Source', 'Blockchain', 'Cloud Computing',
       'Mobile Development', 'Web Development', 'Data Science', 'Cybersecurity'
@@ -410,14 +454,14 @@ class TorreAPI {
     let results: TorreSearchResult[] = [];
 
     // Check for exact matches first
-    if (this.demoProfiles[searchTerm as keyof typeof this.demoProfiles]) {
-      results = [...this.demoProfiles[searchTerm as keyof typeof this.demoProfiles]];
+    if (this.demoProfiles[searchTerm]) {
+      results = [...this.demoProfiles[searchTerm]];
     } else {
       // Partial matches
       Object.values(this.demoProfiles).forEach(profiles => {
         profiles.forEach(profile => {
-          if (profile.professionalTitle.toLowerCase().includes(searchTerm) ||
-              profile.summary.toLowerCase().includes(searchTerm)) {
+          if (profile.professionalTitle?.toLowerCase().includes(searchTerm) ||
+              profile.summary?.toLowerCase().includes(searchTerm)) {
             results.push(profile);
           }
         });
@@ -436,7 +480,7 @@ class TorreAPI {
     await new Promise(resolve => setTimeout(resolve, 300));
 
     // Find profile by username
-    let profile: any = null;
+    let profile: TorreSearchResult | null = null;
     Object.values(this.demoProfiles).forEach(profiles => {
       const found = profiles.find(p => p.username === username);
       if (found) profile = found;
@@ -461,7 +505,7 @@ class TorreAPI {
 
         // Realistic delay between requests
         await new Promise(resolve => setTimeout(resolve, 100));
-      } catch (error) {
+      } catch {
         console.warn(`⚠️ Could not fetch genome for ${username}`);
       }
     }
