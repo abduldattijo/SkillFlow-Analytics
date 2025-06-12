@@ -58,6 +58,78 @@ interface TorreGenome {
   }>;
 }
 
+export class SkillAnalyzer {
+  static analyzeSkills(genomes: TorreGenome[]): any[] {
+    const skillCounts = new Map<string, number>();
+    const totalProfiles = genomes.length;
+
+    // Count skill frequencies
+    genomes.forEach(genome => {
+      genome.skills.forEach(skill => {
+        const count = skillCounts.get(skill.name) || 0;
+        skillCounts.set(skill.name, count + 1);
+      });
+    });
+
+    // Convert to array and sort by frequency
+    const skills = Array.from(skillCounts.entries())
+      .map(([name, frequency]) => ({
+        name,
+        frequency,
+        percentage: ((frequency / totalProfiles) * 100).toFixed(1),
+        trend: this.getSkillTrend(name),
+        demand: this.getSkillDemand(name)
+      }))
+      .sort((a, b) => b.frequency - a.frequency);
+
+    return skills;
+  }
+
+  static getLocationDistribution(genomes: TorreGenome[]): any[] {
+    const locationCounts = new Map<string, number>();
+
+    genomes.forEach(genome => {
+      const location = genome.person.location?.name || 'Unknown';
+      const count = locationCounts.get(location) || 0;
+      locationCounts.set(location, count + 1);
+    });
+
+    return Array.from(locationCounts.entries())
+      .map(([location, count]) => ({
+        location,
+        count,
+        percentage: ((count / genomes.length) * 100).toFixed(1)
+      }))
+      .sort((a, b) => b.count - a.count);
+  }
+
+  private static getSkillTrend(skillName: string): 'rising' | 'stable' | 'declining' {
+    const risingSkills = ['TypeScript', 'React', 'Docker', 'Kubernetes', 'Machine Learning', 'Python'];
+    const decliningSkills = ['jQuery', 'Flash', 'Silverlight'];
+
+    if (risingSkills.some(skill => skillName.toLowerCase().includes(skill.toLowerCase()))) {
+      return 'rising';
+    }
+    if (decliningSkills.some(skill => skillName.toLowerCase().includes(skill.toLowerCase()))) {
+      return 'declining';
+    }
+    return 'stable';
+  }
+
+  private static getSkillDemand(skillName: string): 'high' | 'medium' | 'low' {
+    const highDemandSkills = ['React', 'Python', 'JavaScript', 'TypeScript', 'Machine Learning', 'AWS'];
+    const lowDemandSkills = ['Flash', 'Silverlight', 'VB.NET'];
+
+    if (highDemandSkills.some(skill => skillName.toLowerCase().includes(skill.toLowerCase()))) {
+      return 'high';
+    }
+    if (lowDemandSkills.some(skill => skillName.toLowerCase().includes(skill.toLowerCase()))) {
+      return 'low';
+    }
+    return 'medium';
+  }
+}
+
 class TorreAPI {
   private baseURL = 'https://torre.ai/api';
 
@@ -177,11 +249,66 @@ class TorreAPI {
 
   private generateRealisticSkills(title: string): any[] {
     const skillSets = {
-      'Python': ['Python', 'Django', 'FastAPI', 'Flask', 'PostgreSQL', 'AWS', 'Docker', 'Git', 'Linux', 'REST APIs'],
-      'JavaScript': ['JavaScript', 'TypeScript', 'React', 'Node.js', 'Express', 'MongoDB', 'HTML5', 'CSS3', 'Git', 'npm'],
-      'React': ['React', 'JavaScript', 'TypeScript', 'Redux', 'Next.js', 'CSS3', 'HTML5', 'Jest', 'Webpack', 'Git'],
-      'Data Science': ['Python', 'Pandas', 'NumPy', 'Scikit-learn', 'TensorFlow', 'SQL', 'Jupyter', 'Matplotlib', 'Statistics', 'Machine Learning'],
-      'DevOps': ['Docker', 'Kubernetes', 'AWS', 'Python', 'Terraform', 'Jenkins', 'Git', 'Linux', 'Monitoring', 'CI/CD']
+      'Python': [
+        { name: 'Python', proficiency: 'expert' },
+        { name: 'Django', proficiency: 'advanced' },
+        { name: 'FastAPI', proficiency: 'intermediate' },
+        { name: 'Flask', proficiency: 'advanced' },
+        { name: 'PostgreSQL', proficiency: 'advanced' },
+        { name: 'AWS', proficiency: 'intermediate' },
+        { name: 'Docker', proficiency: 'intermediate' },
+        { name: 'Git', proficiency: 'advanced' },
+        { name: 'Linux', proficiency: 'intermediate' },
+        { name: 'REST APIs', proficiency: 'expert' }
+      ],
+      'JavaScript': [
+        { name: 'JavaScript', proficiency: 'expert' },
+        { name: 'TypeScript', proficiency: 'advanced' },
+        { name: 'React', proficiency: 'expert' },
+        { name: 'Node.js', proficiency: 'advanced' },
+        { name: 'Express', proficiency: 'advanced' },
+        { name: 'MongoDB', proficiency: 'intermediate' },
+        { name: 'HTML5', proficiency: 'expert' },
+        { name: 'CSS3', proficiency: 'advanced' },
+        { name: 'Git', proficiency: 'advanced' },
+        { name: 'npm', proficiency: 'advanced' }
+      ],
+      'React': [
+        { name: 'React', proficiency: 'expert' },
+        { name: 'JavaScript', proficiency: 'expert' },
+        { name: 'TypeScript', proficiency: 'advanced' },
+        { name: 'Redux', proficiency: 'advanced' },
+        { name: 'Next.js', proficiency: 'intermediate' },
+        { name: 'CSS3', proficiency: 'advanced' },
+        { name: 'HTML5', proficiency: 'expert' },
+        { name: 'Jest', proficiency: 'intermediate' },
+        { name: 'Webpack', proficiency: 'intermediate' },
+        { name: 'Git', proficiency: 'advanced' }
+      ],
+      'Data Science': [
+        { name: 'Python', proficiency: 'expert' },
+        { name: 'Pandas', proficiency: 'expert' },
+        { name: 'NumPy', proficiency: 'advanced' },
+        { name: 'Scikit-learn', proficiency: 'advanced' },
+        { name: 'TensorFlow', proficiency: 'intermediate' },
+        { name: 'SQL', proficiency: 'advanced' },
+        { name: 'Jupyter', proficiency: 'expert' },
+        { name: 'Matplotlib', proficiency: 'advanced' },
+        { name: 'Statistics', proficiency: 'expert' },
+        { name: 'Machine Learning', proficiency: 'advanced' }
+      ],
+      'DevOps': [
+        { name: 'Docker', proficiency: 'expert' },
+        { name: 'Kubernetes', proficiency: 'advanced' },
+        { name: 'AWS', proficiency: 'expert' },
+        { name: 'Python', proficiency: 'advanced' },
+        { name: 'Terraform', proficiency: 'advanced' },
+        { name: 'Jenkins', proficiency: 'intermediate' },
+        { name: 'Git', proficiency: 'expert' },
+        { name: 'Linux', proficiency: 'expert' },
+        { name: 'Monitoring', proficiency: 'advanced' },
+        { name: 'CI/CD', proficiency: 'expert' }
+      ]
     };
 
     const getSkillSet = (title: string) => {
@@ -190,15 +317,14 @@ class TorreAPI {
       if (title.includes('React')) return skillSets.React;
       if (title.includes('Data')) return skillSets['Data Science'];
       if (title.includes('DevOps')) return skillSets.DevOps;
-      return skillSets.Python; // fallback
+      return skillSets.React; // fallback
     };
 
     const relevantSkills = getSkillSet(title);
-    const proficiencyLevels = ['novice', 'intermediate', 'advanced', 'expert'] as const;
 
     return relevantSkills.map((skill, index) => ({
-      name: skill,
-      proficiency: proficiencyLevels[Math.min(Math.floor(Math.random() * 4), 3)],
+      name: skill.name,
+      proficiency: skill.proficiency,
       highlightIndex: index
     }));
   }

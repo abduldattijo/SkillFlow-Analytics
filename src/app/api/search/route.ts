@@ -1,7 +1,6 @@
 // src/app/api/search/route.ts - DEMO VERSION
 import { NextRequest, NextResponse } from 'next/server';
-import { torreAPI } from '@/lib/torre-api';
-import { SkillAnalyzer } from '@/lib/analytics';
+import { torreAPI, SkillAnalyzer } from '../../../lib/torre-api';
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,10 +54,26 @@ export async function POST(request: NextRequest) {
       location: genome.person.location?.name
     }));
 
+    // Enhanced skill analytics with proper structure
+    const enhancedSkillAnalytics = skillAnalytics.map(skill => ({
+      name: skill.name,
+      frequency: skill.frequency,
+      percentage: skill.percentage,
+      trend: skill.trend || 'stable',
+      demand: skill.demand || 'medium'
+    }));
+
+    // Enhanced location distribution
+    const enhancedLocationDistribution = locationDistribution.map(loc => ({
+      location: loc.location,
+      count: loc.count,
+      percentage: ((loc.count / searchResults.length) * 100).toFixed(1)
+    }));
+
     const analytics = {
       totalProfiles: searchResults.length,
-      skillAnalytics: skillAnalytics.slice(0, 15),
-      locationDistribution,
+      skillAnalytics: enhancedSkillAnalytics.slice(0, 15),
+      locationDistribution: enhancedLocationDistribution,
       profiles,
       isDemo: true,
       demoMessage: `Showing realistic demo data for "${query}". This demonstrates the full analytics capabilities with Torre-like data structure.`

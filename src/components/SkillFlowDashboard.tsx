@@ -1,56 +1,547 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Search, TrendingUp, Users, MapPin, Award, Loader, AlertCircle } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Search, TrendingUp, Users, MapPin, Award, Briefcase, Calendar, AlertCircle, Loader, BarChart3, PieChart, Globe, Brain, Zap, Target, Network, Star } from 'lucide-react';
 
 // Types
-interface SkillAnalytics {
-  skillName: string;
-  frequency: number;
-  avgProficiency: number;
-  industries: string[];
-  experienceLevels: {
-    novice: number;
-    intermediate: number;
-    advanced: number;
-    expert: number;
+type TabType = 'overview' | 'skills' | 'locations' | 'ai-insights' | 'network';
+
+interface SearchFilter {
+  experience: string[];
+  location: string[];
+  skills: string[];
+  salaryRange: [number, number];
+  remote: boolean;
+}
+
+// Mock Smart Search Component (simplified for demo)
+const SmartSearch: React.FC<{ onSearch: (query: string, filters?: SearchFilter) => void; initialQuery?: string; isLoading?: boolean }> = ({ onSearch, initialQuery = '', isLoading = false }) => {
+  const [query, setQuery] = useState(initialQuery);
+
+  const handleSearch = () => {
+    if (query.trim()) {
+      onSearch(query.trim());
+    }
   };
-  trend: 'rising' | 'stable' | 'declining';
+
+  return (
+    <div className="relative w-full max-w-4xl mx-auto">
+      <div className="relative bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200">
+        <div className="flex items-center px-4 py-3">
+          <Search className="w-5 h-5 mr-3 text-gray-400" />
+
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            placeholder="Search for skills, roles, companies, or locations..."
+            className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 outline-none text-lg"
+            disabled={isLoading}
+          />
+
+          <button
+            onClick={handleSearch}
+            disabled={isLoading || !query.trim()}
+            className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          >
+            {isLoading ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              'Search'
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Mock AI Intelligence (simplified)
+class AISkillIntelligence {
+  static analyzeSkillCorrelations(skill: string) {
+    const correlations = {
+      'react': [
+        { skill: 'JavaScript', correlation: 0.95, confidence: 0.98, marketDemand: 'high' as const, trend: 'rising' as const },
+        { skill: 'TypeScript', correlation: 0.78, confidence: 0.92, marketDemand: 'high' as const, trend: 'rising' as const },
+        { skill: 'Node.js', correlation: 0.72, confidence: 0.89, marketDemand: 'medium' as const, trend: 'stable' as const }
+      ],
+      'python': [
+        { skill: 'Django', correlation: 0.68, confidence: 0.91, marketDemand: 'high' as const, trend: 'stable' as const },
+        { skill: 'FastAPI', correlation: 0.45, confidence: 0.83, marketDemand: 'high' as const, trend: 'rising' as const },
+        { skill: 'Machine Learning', correlation: 0.55, confidence: 0.79, marketDemand: 'high' as const, trend: 'rising' as const }
+      ],
+      'javascript': [
+        { skill: 'HTML5', correlation: 0.92, confidence: 0.97, marketDemand: 'high' as const, trend: 'stable' as const },
+        { skill: 'CSS3', correlation: 0.89, confidence: 0.95, marketDemand: 'medium' as const, trend: 'stable' as const },
+        { skill: 'React', correlation: 0.73, confidence: 0.91, marketDemand: 'high' as const, trend: 'rising' as const }
+      ]
+    };
+
+    const key = skill.toLowerCase() as keyof typeof correlations;
+    return correlations[key] || correlations.react;
+  }
+
+  static generateCareerPaths(skills: string[]) {
+    return [
+      {
+        title: 'Senior Software Engineer',
+        probability: 0.78,
+        timeframe: '18-24 months',
+        requiredSkills: ['System Design', 'Leadership', 'Cloud Architecture'],
+        salaryRange: { min: 130000, max: 200000 }
+      },
+      {
+        title: 'Tech Lead',
+        probability: 0.65,
+        timeframe: '24-36 months',
+        requiredSkills: ['Team Management', 'Architecture', 'Mentoring'],
+        salaryRange: { min: 150000, max: 230000 }
+      }
+    ];
+  }
+
+  static generateMarketInsights(skills: string[]) {
+    return skills.map(skill => ({
+      skill,
+      demand: Math.floor(Math.random() * 40) + 60,
+      supply: Math.floor(Math.random() * 30) + 50,
+      competition: ['low', 'medium', 'high'][Math.floor(Math.random() * 3)] as 'low' | 'medium' | 'high',
+      opportunities: Math.floor(Math.random() * 1000) + 500,
+      averageSalary: 100000 + Math.floor(Math.random() * 50000),
+      growthRate: Math.floor(Math.random() * 20) + 5
+    }));
+  }
 }
 
-interface LocationData {
-  country: string;
-  count: number;
-}
+// Interactive Skill Network Visualization (Full Version)
+const SkillNetworkVisualization: React.FC<{ searchTerm: string }> = ({ searchTerm }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [selectedSkill, setSelectedSkill] = useState<any>(null);
+  const [isAnimating, setIsAnimating] = useState(true);
+  const [nodes, setNodes] = useState<any[]>([]);
+  const [connections, setConnections] = useState<any[]>([]);
 
-interface SearchAnalytics {
-  totalProfiles: number;
-  skillAnalytics: SkillAnalytics[];
-  locationDistribution: LocationData[];
-  profiles: Array<{
-    name: string;
-    username: string;
-    headline?: string;
-    topSkills: string[];
-    location?: string;
-  }>;
-}
+  // Generate realistic skill network data
+  const generateSkillNetwork = (centerSkill: string) => {
+    const skillData = {
+      'react': {
+        core: { name: 'React', demand: 92, trend: 'rising' as const, salary: 115000 },
+        connected: [
+          { name: 'JavaScript', demand: 95, trend: 'stable' as const, salary: 110000, strength: 0.9 },
+          { name: 'TypeScript', demand: 88, trend: 'rising' as const, salary: 125000, strength: 0.8 },
+          { name: 'Node.js', demand: 82, trend: 'stable' as const, salary: 120000, strength: 0.7 },
+          { name: 'Redux', demand: 65, trend: 'stable' as const, salary: 118000, strength: 0.6 },
+          { name: 'Next.js', demand: 78, trend: 'rising' as const, salary: 128000, strength: 0.65 },
+          { name: 'GraphQL', demand: 72, trend: 'rising' as const, salary: 135000, strength: 0.5 },
+          { name: 'Jest', demand: 58, trend: 'stable' as const, salary: 112000, strength: 0.55 }
+        ]
+      },
+      'python': {
+        core: { name: 'Python', demand: 88, trend: 'rising' as const, salary: 120000 },
+        connected: [
+          { name: 'Django', demand: 75, trend: 'stable' as const, salary: 118000, strength: 0.8 },
+          { name: 'FastAPI', demand: 68, trend: 'rising' as const, salary: 125000, strength: 0.7 },
+          { name: 'Machine Learning', demand: 95, trend: 'rising' as const, salary: 145000, strength: 0.75 },
+          { name: 'Pandas', demand: 72, trend: 'stable' as const, salary: 115000, strength: 0.65 },
+          { name: 'TensorFlow', demand: 85, trend: 'rising' as const, salary: 140000, strength: 0.6 },
+          { name: 'PostgreSQL', demand: 78, trend: 'stable' as const, salary: 110000, strength: 0.7 },
+          { name: 'Docker', demand: 82, trend: 'rising' as const, salary: 125000, strength: 0.6 }
+        ]
+      },
+      'javascript': {
+        core: { name: 'JavaScript', demand: 95, trend: 'stable' as const, salary: 110000 },
+        connected: [
+          { name: 'React', demand: 92, trend: 'rising' as const, salary: 115000, strength: 0.9 },
+          { name: 'Vue.js', demand: 68, trend: 'stable' as const, salary: 108000, strength: 0.6 },
+          { name: 'Angular', demand: 72, trend: 'stable' as const, salary: 112000, strength: 0.65 },
+          { name: 'Node.js', demand: 82, trend: 'stable' as const, salary: 120000, strength: 0.8 },
+          { name: 'TypeScript', demand: 88, trend: 'rising' as const, salary: 125000, strength: 0.75 },
+          { name: 'Express', demand: 75, trend: 'stable' as const, salary: 115000, strength: 0.7 }
+        ]
+      }
+    };
 
-const COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'];
+    const data = skillData[centerSkill.toLowerCase() as keyof typeof skillData] || skillData.react;
+    const width = 600;
+    const height = 400;
 
-const SkillFlowDashboard = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+    // Create nodes
+    const allSkills = [data.core, ...data.connected];
+    const newNodes: any[] = allSkills.map((skill, index) => ({
+      id: skill.name,
+      name: skill.name,
+      demand: skill.demand,
+      trend: skill.trend,
+      size: index === 0 ? 60 : 30 + (skill.demand / 100) * 20,
+      connections: index === 0 ? data.connected.map(s => s.name) : [data.core.name],
+      salary: skill.salary,
+      x: index === 0 ? width / 2 : Math.random() * width,
+      y: index === 0 ? height / 2 : Math.random() * height,
+      vx: 0,
+      vy: 0
+    }));
+
+    // Create connections
+    const newConnections: any[] = data.connected.map(skill => ({
+      source: data.core.name,
+      target: skill.name,
+      strength: (skill as any).strength || 0.5
+    }));
+
+    setNodes(newNodes);
+    setConnections(newConnections);
+  };
+
+  // Physics simulation
+  const updatePhysics = () => {
+    if (!isAnimating) return;
+
+    setNodes(prevNodes => {
+      const newNodes = [...prevNodes];
+      const width = 600;
+      const height = 400;
+      const centerForce = 0.01;
+      const repelForce = 500;
+      const attractForce = 0.02;
+      const damping = 0.95;
+
+      newNodes.forEach((node, i) => {
+        // Center force
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const dx = centerX - node.x;
+        const dy = centerY - node.y;
+        node.vx += dx * centerForce;
+        node.vy += dy * centerForce;
+
+        // Repel from other nodes
+        newNodes.forEach((other, j) => {
+          if (i !== j) {
+            const dx = node.x - other.x;
+            const dy = node.y - other.y;
+            const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+            const force = repelForce / (distance * distance);
+            node.vx += (dx / distance) * force;
+            node.vy += (dy / distance) * force;
+          }
+        });
+
+        // Attract to connected nodes
+        connections.forEach(conn => {
+          if (conn.source === node.id || conn.target === node.id) {
+            const otherId = conn.source === node.id ? conn.target : conn.source;
+            const other = newNodes.find(n => n.id === otherId);
+            if (other) {
+              const dx = other.x - node.x;
+              const dy = other.y - node.y;
+              const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+              const force = attractForce * conn.strength;
+              node.vx += (dx / distance) * force;
+              node.vy += (dy / distance) * force;
+            }
+          }
+        });
+
+        // Apply velocity and damping
+        node.vx *= damping;
+        node.vy *= damping;
+        node.x += node.vx;
+        node.y += node.vy;
+
+        // Boundary constraints
+        const margin = node.size;
+        node.x = Math.max(margin, Math.min(width - margin, node.x));
+        node.y = Math.max(margin, Math.min(height - margin, node.y));
+      });
+
+      return newNodes;
+    });
+  };
+
+  // Canvas drawing
+  const draw = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw connections
+    connections.forEach(conn => {
+      const source = nodes.find(n => n.id === conn.source);
+      const target = nodes.find(n => n.id === conn.target);
+
+      if (source && target) {
+        ctx.beginPath();
+        ctx.moveTo(source.x, source.y);
+        ctx.lineTo(target.x, target.y);
+        ctx.strokeStyle = `rgba(99, 102, 241, ${conn.strength * 0.6})`;
+        ctx.lineWidth = conn.strength * 4;
+        ctx.stroke();
+      }
+    });
+
+    // Draw nodes
+    nodes.forEach(node => {
+      // Node circle
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, node.size / 2, 0, 2 * Math.PI);
+
+      // Color based on trend
+      const colors = {
+        rising: '#10b981',
+        stable: '#6366f1',
+        declining: '#ef4444'
+      };
+
+      ctx.fillStyle = colors[node.trend as keyof typeof colors];
+      ctx.fill();
+
+      // Border
+      ctx.strokeStyle = node === selectedSkill ? '#fbbf24' : '#ffffff';
+      ctx.lineWidth = node === selectedSkill ? 3 : 2;
+      ctx.stroke();
+
+      // Demand indicator
+      if (node.demand > 80) {
+        ctx.beginPath();
+        ctx.arc(node.x + node.size / 3, node.y - node.size / 3, 6, 0, 2 * Math.PI);
+        ctx.fillStyle = '#fbbf24';
+        ctx.fill();
+      }
+
+      // Text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `${Math.max(10, node.size / 4)}px system-ui`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(node.name, node.x, node.y);
+    });
+  };
+
+  // Handle canvas click
+  const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    const clickedNode = nodes.find(node => {
+      const distance = Math.sqrt((x - node.x) ** 2 + (y - node.y) ** 2);
+      return distance < node.size / 2;
+    });
+
+    setSelectedSkill(clickedNode || null);
+  };
+
+  // Initialize network when search term changes
+  useEffect(() => {
+    generateSkillNetwork(searchTerm);
+  }, [searchTerm]);
+
+  // Animation loop
+  useEffect(() => {
+    if (!isAnimating) return;
+
+    const interval = setInterval(() => {
+      updatePhysics();
+      draw();
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, [nodes, connections, isAnimating, selectedSkill]);
+
+  // Initial draw
+  useEffect(() => {
+    draw();
+  }, [nodes, connections, selectedSkill]);
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <Network className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              AI Skill Network
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Interactive skill correlation visualization
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setIsAnimating(!isAnimating)}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+              isAnimating
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+            }`}
+          >
+            {isAnimating ? 'Animating' : 'Paused'}
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Network Visualization */}
+        <div className="lg:col-span-2">
+          <div className="relative bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-blue-900/20 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <canvas
+              ref={canvasRef}
+              width={600}
+              height={400}
+              className="w-full h-auto cursor-pointer"
+              onClick={handleCanvasClick}
+            />
+
+            {/* Legend */}
+            <div className="absolute top-4 left-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-3 text-xs">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-1">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-gray-700 dark:text-gray-300">Rising</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span className="text-gray-700 dark:text-gray-300">Stable</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                  <span className="text-gray-700 dark:text-gray-300">High Demand</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Skill Details Panel */}
+        <div className="space-y-4">
+          {selectedSkill ? (
+            <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center space-x-2 mb-3">
+                <Star className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <h4 className="font-semibold text-blue-900 dark:text-blue-100">
+                  {selectedSkill.name}
+                </h4>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Market Demand</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-16 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
+                        style={{ width: `${selectedSkill.demand}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      {selectedSkill.demand}%
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Trend</span>
+                  <div className="flex items-center space-x-1">
+                    <TrendingUp className={`w-4 h-4 ${
+                      selectedSkill.trend === 'rising' ? 'text-green-500' :
+                      selectedSkill.trend === 'stable' ? 'text-blue-500' : 'text-red-500'
+                    }`} />
+                    <span className={`text-sm font-medium capitalize ${
+                      selectedSkill.trend === 'rising' ? 'text-green-600 dark:text-green-400' :
+                      selectedSkill.trend === 'stable' ? 'text-blue-600 dark:text-blue-400' : 
+                      'text-red-600 dark:text-red-400'
+                    }`}>
+                      {selectedSkill.trend}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Avg. Salary</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    ${selectedSkill.salary.toLocaleString()}
+                  </span>
+                </div>
+
+                <div className="pt-2 border-t border-blue-200 dark:border-blue-700">
+                  <span className="text-xs text-blue-600 dark:text-blue-400">
+                    Connected to {selectedSkill.connections.length} related skills
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-6 text-center border border-gray-200 dark:border-gray-700">
+              <Target className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Click on a skill node to view detailed insights
+              </p>
+            </div>
+          )}
+
+          {/* AI Insights */}
+          <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+            <div className="flex items-center space-x-2 mb-3">
+              <Brain className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              <h4 className="font-semibold text-purple-900 dark:text-purple-100">
+                AI Insights
+              </h4>
+            </div>
+
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center space-x-2">
+                <Zap className="w-4 h-4 text-yellow-500" />
+                <span className="text-gray-700 dark:text-gray-300">
+                  {searchTerm} professionals often learn TypeScript next
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <TrendingUp className="w-4 h-4 text-green-500" />
+                <span className="text-gray-700 dark:text-gray-300">
+                  85% correlation with cloud technologies
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Target className="w-4 h-4 text-blue-500" />
+                <span className="text-gray-700 dark:text-gray-300">
+                  High demand in fintech and healthcare
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Main Dashboard Component
+const SkillFlowDashboard: React.FC = () => {
+  const [searchResults, setSearchResults] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('skills');
-  const [searchResults, setSearchResults] = useState<SearchAnalytics | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [currentQuery, setCurrentQuery] = useState('');
+  const [showAIInsights, setShowAIInsights] = useState(false);
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+  const handleSearch = async (query: string, filters?: SearchFilter) => {
+    if (!query.trim()) return;
 
     setIsLoading(true);
     setError(null);
+    setCurrentQuery(query);
 
     try {
       const response = await fetch('/api/search', {
@@ -58,7 +549,11 @@ const SkillFlowDashboard = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ query: searchQuery, limit: 50 }),
+        body: JSON.stringify({
+          query: query.trim(),
+          limit: 30,
+          filters
+        }),
       });
 
       if (!response.ok) {
@@ -66,75 +561,38 @@ const SkillFlowDashboard = () => {
       }
 
       const data = await response.json();
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
       setSearchResults(data);
+      setShowAIInsights(true);
+
+      // Auto-show AI insights tab for impressive effect
+      setTimeout(() => {
+        setActiveTab('ai-insights');
+      }, 1000);
+
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
       console.error('Search error:', err);
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const StatCard = ({ title, value, icon: Icon, trend, trendValue }: {
-    title: string;
-    value: string | number;
-    icon: React.ComponentType<any>;
-    trend?: 'up' | 'down';
-    trendValue?: string;
-  }) => (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{value}</p>
-          {trend && (
-            <div className={`flex items-center mt-2 text-sm ${
-              trend === 'up' ? 'text-green-600' : 'text-red-600'
-            }`}>
-              <TrendingUp className="w-4 h-4 mr-1" />
-              {trendValue}
-            </div>
-          )}
-        </div>
-        <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-          <Icon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-        </div>
-      </div>
-    </div>
-  );
-
-  const TrendIndicator = ({ trend }: { trend: 'rising' | 'stable' | 'declining' }) => {
-    const colors = {
-      rising: 'text-green-500 bg-green-100',
-      stable: 'text-yellow-500 bg-yellow-100',
-      declining: 'text-red-500 bg-red-100'
-    };
-
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[trend]}`}>
-        {trend}
-      </span>
-    );
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-white" />
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">SkillFlow Analytics</h1>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mr-4">
+              <BarChart3 className="w-6 h-6 text-white" />
             </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center space-x-2">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">SkillFlow Analytics</h1>
+          </div>
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+            AI-powered talent intelligence platform for discovering skill trends, market insights, and career opportunities
+          </p>
+          <div className="mt-4">
+            <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center space-x-2">
               <span className="px-2 py-1 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/50 dark:to-purple-900/50 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
                 ✨ Demo Mode
               </span>
@@ -142,245 +600,57 @@ const SkillFlowDashboard = () => {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Search Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Talent Search & Analytics</h2>
-          <div className="flex space-x-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search for skills, roles, or keywords... (e.g., 'Python developer', 'React', 'Data Scientist')"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-            <button
-              onClick={handleSearch}
-              disabled={isLoading || !searchQuery.trim()}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-            >
-              {isLoading ? (
-                <Loader className="w-5 h-5 animate-spin" />
-              ) : (
-                <Search className="w-5 h-5" />
-              )}
-              <span>{isLoading ? 'Analyzing...' : 'Search'}</span>
-            </button>
-          </div>
-
-          {/* Error Display */}
-          {error && (
-            <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center space-x-2">
-              <AlertCircle className="w-5 h-5 text-red-500" />
-              <span className="text-red-700 dark:text-red-400">{error}</span>
-            </div>
-          )}
-
-          {/* Demo Data Notice */}
-          {searchResults && (searchResults as any).isDemo && (
-            <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-start space-x-3">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 text-white" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                  ✨ Demo Mode - Realistic Torre-like Data
-                </h4>
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  {(searchResults as any).demoMessage || 'This demonstrates SkillFlow Analytics with realistic demo data that mimics Torre\'s API structure and responses.'}
-                </p>
-                <div className="mt-2 text-xs text-blue-600 dark:text-blue-400">
-                  <strong>Try these searches:</strong> "python", "javascript", "react", "data scientist", "devops"
-                </div>
-              </div>
-            </div>
-          )}
+        {/* Smart Search Bar */}
+        <div className="mb-8">
+          <SmartSearch
+            onSearch={handleSearch}
+            initialQuery={currentQuery}
+            isLoading={isLoading}
+          />
         </div>
 
-        {/* Results Section */}
-        {searchResults && (
-          <>
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <StatCard
-                title="Total Profiles"
-                value={searchResults.totalProfiles.toLocaleString()}
-                icon={Users}
-                trend="up"
-                trendValue="+12% vs last search"
-              />
-              <StatCard
-                title="Unique Skills"
-                value={searchResults.skillAnalytics.length}
-                icon={Award}
-                trend="up"
-                trendValue={`${searchResults.skillAnalytics.filter(s => s.trend === 'rising').length} trending`}
-              />
-              <StatCard
-                title="Countries"
-                value={searchResults.locationDistribution.length}
-                icon={MapPin}
-              />
-              <StatCard
-                title="Analyzed Profiles"
-                value={searchResults.profiles.length}
-                icon={TrendingUp}
-                trend="up"
-                trendValue="Deep analysis"
-              />
-            </div>
-
-            {/* Tabs */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
-              <div className="border-b border-gray-200 dark:border-gray-700">
-                <nav className="flex space-x-8 px-6">
-                  {[
-                    { id: 'skills', name: 'Skill Trends', icon: TrendingUp },
-                    { id: 'locations', name: 'Geographic Distribution', icon: MapPin },
-                  ].map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`py-4 px-2 border-b-2 font-medium text-sm flex items-center space-x-2 transition-colors ${
-                        activeTab === tab.id
-                          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                      }`}
-                    >
-                      <tab.icon className="w-4 h-4" />
-                      <span>{tab.name}</span>
-                    </button>
-                  ))}
-                </nav>
-              </div>
-
-              <div className="p-6">
-                {activeTab === 'skills' && (
-                  <div className="space-y-6">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Top Skills by Frequency</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Based on {searchResults.profiles.length} analyzed profiles
-                      </p>
-                    </div>
-
-                    {/* Skills Bar Chart */}
-                    <div className="h-80">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={searchResults.skillAnalytics.slice(0, 10)}>
-                          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                          <XAxis
-                            dataKey="skillName"
-                            angle={-45}
-                            textAnchor="end"
-                            height={80}
-                            className="text-xs"
-                          />
-                          <YAxis className="text-xs" />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                              border: 'none',
-                              borderRadius: '8px',
-                              color: 'white'
-                            }}
-                          />
-                          <Bar dataKey="frequency" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    {/* Skills Table */}
-                    <div className="overflow-hidden border border-gray-200 dark:border-gray-700 rounded-lg">
-                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead className="bg-gray-50 dark:bg-gray-700">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Skill</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Frequency</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Avg Proficiency</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Trend</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                          {searchResults.skillAnalytics.slice(0, 10).map((skill) => (
-                            <tr key={skill.skillName} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                {skill.skillName}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                {skill.frequency} profiles
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                {skill.avgProficiency.toFixed(1)}/4.0
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <TrendIndicator trend={skill.trend} />
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'locations' && (
-                  <div className="space-y-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Geographic Distribution</h3>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* Pie Chart */}
-                      <div className="h-80">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={searchResults.locationDistribution.slice(0, 5)}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              label={({country, percent}) => `${country} ${(percent * 100).toFixed(0)}%`}
-                              outerRadius={80}
-                              fill="#8884d8"
-                              dataKey="count"
-                            >
-                              {searchResults.locationDistribution.slice(0, 5).map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                              ))}
-                            </Pie>
-                            <Tooltip />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-
-                      {/* Location List */}
-                      <div className="space-y-3">
-                        {searchResults.locationDistribution.slice(0, 8).map((location, index) => (
-                          <div key={location.country} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                            <div className="flex items-center space-x-3">
-                              <div
-                                className="w-4 h-4 rounded-full"
-                                style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                              />
-                              <span className="font-medium text-gray-900 dark:text-white">{location.country}</span>
-                            </div>
-                            <span className="text-sm text-gray-500 dark:text-gray-300">{location.count} profiles</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
+        {/* Demo Data Notice */}
+        {searchResults && (searchResults as any).isDemo && (
+          <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-start space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-white" />
               </div>
             </div>
-          </>
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                ✨ Demo Mode - Realistic Torre-like Data
+              </h4>
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                {(searchResults as any).demoMessage || 'This demonstrates SkillFlow Analytics with realistic demo data that mimics Torre\'s API structure and responses.'}
+              </p>
+              <div className="mt-2 text-xs text-blue-600 dark:text-blue-400">
+                <strong>Try these searches:</strong> "python", "javascript", "react", "data scientist", "devops"
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="mb-8 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center space-x-3">
+            <AlertCircle className="w-5 h-5 text-red-500" />
+            <div>
+              <h4 className="text-sm font-semibold text-red-800 dark:text-red-200">Search Error</h4>
+              <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="text-center py-12">
+            <div className="inline-flex items-center space-x-3">
+              <Loader className="w-8 h-8 animate-spin text-blue-600" />
+              <span className="text-lg text-gray-600 dark:text-gray-300">Analyzing talent data...</span>
+            </div>
+          </div>
         )}
 
         {/* Empty State */}
@@ -413,6 +683,387 @@ const SkillFlowDashboard = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Enhanced Results */}
+        {searchResults && (
+          <>
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                    <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Profiles</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{searchResults.totalProfiles.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                    <Award className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Top Skills Found</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{searchResults.skillAnalytics?.length || 0}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                    <MapPin className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Locations</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{searchResults.locationDistribution?.length || 0}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <Brain className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">AI Insights</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {showAIInsights ? (
+                        <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Ready</span>
+                      ) : (
+                        '...'
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Enhanced Navigation Tabs */}
+            <div className="flex space-x-1 mb-8 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+              {[
+                { id: 'overview' as TabType, label: 'Overview', icon: BarChart3 },
+                { id: 'skills' as TabType, label: 'Skills Analysis', icon: Award },
+                { id: 'locations' as TabType, label: 'Locations', icon: Globe },
+                { id: 'ai-insights' as TabType, label: 'AI Insights', icon: Brain },
+                { id: 'network' as TabType, label: 'Skill Network', icon: Network }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-md font-medium transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <tab.icon className="w-4 h-4" />
+                  <span>{tab.label}</span>
+                  {tab.id === 'ai-insights' && showAIInsights && (
+                    <Zap className="w-3 h-3 text-yellow-500" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab Content */}
+            {activeTab === 'overview' && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Quick Stats */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Profile Overview</h3>
+                  <div className="space-y-4">
+                    {searchResults.profiles?.slice(0, 5).map((profile: any, index: number) => (
+                      <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                          {profile.name.charAt(0)}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900 dark:text-white">{profile.name}</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{profile.headline}</p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {profile.topSkills?.slice(0, 3).map((skill: string, i: number) => (
+                              <span key={i} className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-xs">
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Top Skills */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Top Skills</h3>
+                  <div className="space-y-3">
+                    {searchResults.skillAnalytics?.slice(0, 8).map((skill: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {skill.name || `Skill ${index + 1}`}
+                        </span>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
+                              style={{ width: `${Math.min(100, (skill.frequency / (searchResults.skillAnalytics[0]?.frequency || 1)) * 100)}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            {skill.frequency || 0}
+                          </span>
+                        </div>
+                      </div>
+                    )) || (
+                      <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                        No skill data available
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'skills' && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Skills Analysis</h3>
+                {searchResults.skillAnalytics && searchResults.skillAnalytics.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {searchResults.skillAnalytics.map((skill: any, index: number) => (
+                      <div key={index} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium text-gray-900 dark:text-white">
+                            {skill.name || `Skill ${index + 1}`}
+                          </h4>
+                          <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                            {skill.frequency || 0}
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden mb-2">
+                          <div
+                            className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
+                            style={{ width: `${Math.min(100, (skill.frequency / (searchResults.skillAnalytics[0]?.frequency || 1)) * 100)}%` }}
+                          ></div>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-500 dark:text-gray-400">
+                            {skill.percentage || '0'}% of profiles
+                          </span>
+                          {skill.trend && (
+                            <span className={`px-2 py-1 rounded-full ${
+                              skill.trend === 'rising' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                              skill.trend === 'declining' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                              'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
+                            }`}>
+                              {skill.trend}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Award className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                    <p className="text-gray-500 dark:text-gray-400">No skills data available</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'locations' && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Geographic Distribution</h3>
+                {searchResults.locationDistribution && searchResults.locationDistribution.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {searchResults.locationDistribution.map((location: any, index: number) => (
+                      <div key={index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <MapPin className="w-5 h-5 text-gray-500" />
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {location.location || `Location ${index + 1}`}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {location.count || 0}
+                          </span>
+                          {location.percentage && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {location.percentage}%
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <MapPin className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                    <p className="text-gray-500 dark:text-gray-400">No location data available</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* AI Insights Tab */}
+            {activeTab === 'ai-insights' && showAIInsights && (
+              <div className="space-y-8">
+                {/* Skill Correlations */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                      <Brain className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Skill Correlation Analysis</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">AI-powered insights for "{currentQuery}"</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Correlations */}
+                    <div>
+                      <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
+                        <Zap className="w-4 h-4 text-yellow-500" />
+                        <span>Skills Often Found Together</span>
+                      </h4>
+                      <div className="space-y-3">
+                        {AISkillIntelligence.analyzeSkillCorrelations(currentQuery).slice(0, 6).map((corr, index) => (
+                          <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                {(corr.correlation * 100).toFixed(0)}%
+                              </div>
+                              <div>
+                                <span className="font-medium text-gray-900 dark:text-white">{corr.skill}</span>
+                                <div className="flex items-center space-x-2 text-xs">
+                                  <span className={`px-2 py-1 rounded-full ${
+                                    corr.marketDemand === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                                    corr.marketDemand === 'medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                                    'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
+                                  }`}>
+                                    {corr.marketDemand} demand
+                                  </span>
+                                  {corr.trend === 'rising' && (
+                                    <span className="text-green-600 dark:text-green-400">↗ trending</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {(corr.confidence * 100).toFixed(0)}% confidence
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Career Paths */}
+                    <div>
+                      <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
+                        <Target className="w-4 h-4 text-blue-500" />
+                        <span>Recommended Career Paths</span>
+                      </h4>
+                      <div className="space-y-4">
+                        {AISkillIntelligence.generateCareerPaths([currentQuery]).slice(0, 3).map((path, index) => (
+                          <div key={index} className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                            <div className="flex items-center justify-between mb-2">
+                              <h5 className="font-medium text-gray-900 dark:text-white">{path.title}</h5>
+                              <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                                {(path.probability * 100).toFixed(0)}% match
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                              Timeline: {path.timeframe}
+                            </p>
+                            <p className="text-sm font-medium text-green-600 dark:text-green-400">
+                              ${path.salaryRange.min.toLocaleString()} - ${path.salaryRange.max.toLocaleString()}
+                            </p>
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {path.requiredSkills.slice(0, 3).map((skill, i) => (
+                                <span key={i} className="px-2 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded text-xs">
+                                  {skill}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Market Insights */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center space-x-2">
+                    <TrendingUp className="w-5 h-5 text-green-500" />
+                    <span>Market Intelligence</span>
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {AISkillIntelligence.generateMarketInsights([currentQuery, ...AISkillIntelligence.analyzeSkillCorrelations(currentQuery).slice(0, 2).map(c => c.skill)]).slice(0, 3).map((insight, index) => (
+                      <div key={index} className="p-4 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-blue-900/20 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-3">{insight.skill}</h4>
+
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">Demand</span>
+                            <div className="flex items-center space-x-2">
+                              <div className="w-16 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-red-500 to-orange-500 rounded-full"
+                                  style={{ width: `${insight.demand}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">{insight.demand}%</span>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">Growth Rate</span>
+                            <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                              +{insight.growthRate.toFixed(1)}%
+                            </span>
+                          </div>
+
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">Avg. Salary</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              ${insight.averageSalary.toLocaleString()}
+                            </span>
+                          </div>
+
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">Competition</span>
+                            <span className={`text-sm font-medium ${
+                              insight.competition === 'low' ? 'text-green-600 dark:text-green-400' :
+                              insight.competition === 'medium' ? 'text-yellow-600 dark:text-yellow-400' :
+                              'text-red-600 dark:text-red-400'
+                            }`}>
+                              {insight.competition}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Skill Network Tab */}
+            {activeTab === 'network' && (
+              <SkillNetworkVisualization searchTerm={currentQuery} />
+            )}
+          </>
         )}
       </div>
     </div>
